@@ -1,103 +1,137 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import Header from "@/components/Header";
+import TaskInput from "@/components/TaskInput";
+import TaskList from "@/components/TaskList";
+import { Button } from "@/components/ui/button";
+
+type Task = {
+  id: number;
+  text: string;
+  completed: boolean;
+};
+
+type Filter = "all" | "completed" | "active";
+type SortBy = "newest" | "oldest" | "completed";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // 🔹 Load data dari LocalStorage saat pertama kali render
+  useEffect(() => {
+    const storedTasks = localStorage.getItem("tasks");
+    if (storedTasks) {
+      setTasks(JSON.parse(storedTasks));
+    }
+  }, []);
+
+  // 🔹 Simpan ke LocalStorage setiap kali tasks berubah
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  const handleAddTask = (text: string) => {
+    const newTask: Task = {
+      id: Date.now(),
+      text,
+      completed: false,
+    };
+    setTasks([...tasks, newTask]);
+  };
+
+  const handleToggleTask = (id: number) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const handleDeleteTask = (id: number) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const handleEditTask = (id: number, newText: string) => {
+    setTasks(
+      tasks.map((task) => (task.id === id ? { ...task, text: newText } : task))
+    );
+  };
+
+  // Filtering
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "completed") return task.completed;
+    if (filter === "active") return !task.completed;
+    return true;
+  });
+
+  // Sorting
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    if (sortBy === "newest") return b.id - a.id;
+    if (sortBy === "oldest") return a.id - b.id;
+    if (sortBy === "completed")
+      return Number(b.completed) - Number(a.completed);
+    return 0;
+  });
+
+  return (
+    <main className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
+      <Header />
+      <div className="max-w-md mx-auto p-4">
+        <TaskInput onAdd={handleAddTask} />
+
+        {/* Filter Tabs */}
+        <div className="flex justify-center gap-3 mt-4 text-sm">
+          <Button
+            variant={filter === "all" ? "default" : "outline"}
+            onClick={() => setFilter("all")}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Semua
+          </Button>
+          <Button
+            variant={filter === "active" ? "default" : "outline"}
+            onClick={() => setFilter("active")}
           >
-            Read our docs
-          </a>
+            Belum
+          </Button>
+          <Button
+            variant={filter === "completed" ? "default" : "outline"}
+            onClick={() => setFilter("completed")}
+          >
+            Selesai
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Dropdown Sort */}
+        <div className="flex justify-end mt-4">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+            className="p-2 rounded border border-gray-300 dark:bg-gray-800"
+          >
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="completed">Selesai duluan</option>
+          </select>
+        </div>
+
+        <div>
+          <p className="text-sm text-gray-500 mt-2">
+            Total: {tasks.length} | Belum selesai:{" "}
+            {tasks.filter((t) => !t.completed).length}
+          </p>
+        </div>
+
+        {/* Tasklist pakai sortedTasks */}
+        <TaskList
+          tasks={sortedTasks}
+          onToggle={handleToggleTask}
+          onDelete={handleDeleteTask}
+          onEdit={handleEditTask}
+        />
+      </div>
+    </main>
   );
 }
