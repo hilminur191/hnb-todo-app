@@ -1,48 +1,39 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Header from "@/components/Header";
-import TaskInput from "@/components/TaskInput";
 import TaskList from "@/components/TaskList";
-import { Button } from "@/components/ui/button";
+import TaskFilter from "@/components/TaskFilter";
+import TaskInput from "@/components/TaskInput";
 
-type Task = {
+interface Task {
   id: number;
   text: string;
   completed: boolean;
-};
-
-type Filter = "all" | "completed" | "active";
-type SortBy = "newest" | "oldest" | "completed";
+}
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [filter, setFilter] = useState<Filter>("all");
-  const [sortBy, setSortBy] = useState<SortBy>("newest");
+  const [filter, setFilter] = useState<"all" | "completed" | "active">("all");
 
-  // 🔹 Load data dari LocalStorage saat pertama kali render
+  // ✅ Load tasks dari localStorage saat pertama kali
   useEffect(() => {
-    const storedTasks = localStorage.getItem("tasks");
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
+    const savedTasks = localStorage.getItem("tasks");
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
     }
   }, []);
 
-  // 🔹 Simpan ke LocalStorage setiap kali tasks berubah
+  // ✅ Simpan tasks ke localStorage setiap kali berubah
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  const handleAddTask = (text: string) => {
-    const newTask: Task = {
-      id: Date.now(),
-      text,
-      completed: false,
-    };
+  const addTask = (text: string) => {
+    const newTask: Task = { id: Date.now(), text, completed: false };
     setTasks([...tasks, newTask]);
   };
 
-  const handleToggleTask = (id: number) => {
+  const toggleTask = (id: number) => {
     setTasks(
       tasks.map((task) =>
         task.id === id ? { ...task, completed: !task.completed } : task
@@ -50,86 +41,36 @@ export default function Home() {
     );
   };
 
-  const handleDeleteTask = (id: number) => {
+  const deleteTask = (id: number) => {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  const handleEditTask = (id: number, newText: string) => {
+  const editTask = (id: number, newText: string) => {
     setTasks(
       tasks.map((task) => (task.id === id ? { ...task, text: newText } : task))
     );
   };
 
-  // Filtering
+  // ✅ Filter daftar tugas
   const filteredTasks = tasks.filter((task) => {
     if (filter === "completed") return task.completed;
     if (filter === "active") return !task.completed;
     return true;
   });
 
-  // Sorting
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (sortBy === "newest") return b.id - a.id;
-    if (sortBy === "oldest") return a.id - b.id;
-    if (sortBy === "completed")
-      return Number(b.completed) - Number(a.completed);
-    return 0;
-  });
-
   return (
-    <main className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
-      <Header />
-      <div className="max-w-md mx-auto p-4">
-        <TaskInput onAdd={handleAddTask} />
-
-        {/* Filter Tabs */}
-        <div className="flex justify-center gap-3 mt-4 text-sm">
-          <Button
-            variant={filter === "all" ? "default" : "outline"}
-            onClick={() => setFilter("all")}
-          >
-            Semua
-          </Button>
-          <Button
-            variant={filter === "active" ? "default" : "outline"}
-            onClick={() => setFilter("active")}
-          >
-            Belum
-          </Button>
-          <Button
-            variant={filter === "completed" ? "default" : "outline"}
-            onClick={() => setFilter("completed")}
-          >
-            Selesai
-          </Button>
-        </div>
-
-        {/* Dropdown Sort */}
-        <div className="flex justify-end mt-4">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-            className="p-2 rounded border border-gray-300 dark:bg-gray-800"
-          >
-            <option value="newest">Terbaru</option>
-            <option value="oldest">Terlama</option>
-            <option value="completed">Selesai duluan</option>
-          </select>
-        </div>
-
-        <div>
-          <p className="text-sm text-gray-500 mt-2">
-            Total: {tasks.length} | Belum selesai:{" "}
-            {tasks.filter((t) => !t.completed).length}
-          </p>
-        </div>
-
-        {/* Tasklist pakai sortedTasks */}
+    <main className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-4">
+        <h1 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
+          HNB To-Do App
+        </h1>
+        <TaskInput onAddTask={addTask} />
+        <TaskFilter filter={filter} setFilter={setFilter} />
         <TaskList
-          tasks={sortedTasks}
-          onToggle={handleToggleTask}
-          onDelete={handleDeleteTask}
-          onEdit={handleEditTask}
+          tasks={filteredTasks}
+          onToggle={toggleTask}
+          onDelete={deleteTask}
+          onEdit={editTask}
         />
       </div>
     </main>
